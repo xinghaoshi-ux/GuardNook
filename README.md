@@ -85,4 +85,4 @@ python3 Scripts/export-release.py --output ~/Downloads --version 0.4.0
 
 打包脚本构建 Apple 芯片和 Intel 的 Universal 应用，收进固定版本并校验 SHA-256 的官方 Node.js 运行时，首次打包需要联网。导出脚本只收集源码白名单，不打包用户数据、缓存、历史备份或凭据，输出 DMG、应用 ZIP、独立源码 ZIP、校验文件和合集。
 
-项目及第三方许可证位于 LICENSE、Vendor/OpenNook 和 Service/claude-switcher。环境与快照设计参考 Claude Switcher 的 MIT 实现，归属说明随应用分发。历史个人出口示例已改为文档示例地址，使用时必须配置自己的节点和真实出口。
+项目以 MIT 许可发布，全文位于 LICENSE；第三方组件的许可证与归属汇总在 THIRD-PARTY-NOTICES.md，各组件原文保留在 Vendor/OpenNook 与 Service/claude-switcher。环境与快照设计参考 Claude Switcher 的 MIT 实现。历史个人出口示例已改为文档示例地址，使用时必须配置自己的节点和真实出口。

@@ -21,7 +21,7 @@ for name in ['Assets','Scripts','Service','Sources','Tests','Vendor','TestSuppor
     for item in (root/name).rglob('*'):
         if item.is_symlink(): raise SystemExit('Symlinks are not allowed in the source export')
     shutil.copytree(root/name,source/name,ignore=ignore)
-for name in ['Package.swift','LICENSE','README.md','CHANGELOG.md','.gitignore']:
+for name in ['Package.swift','LICENSE','THIRD-PARTY-NOTICES.md','README.md','CHANGELOG.md','.gitignore']:
     if (root/name).exists(): shutil.copy2(root/name,source/name)
 for file in source.rglob('*'):
     if not file.is_file(): continue
