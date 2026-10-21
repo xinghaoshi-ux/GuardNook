@@ -1,0 +1,102 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 Glendon Chin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// A copy is included at /LICENSE in the repository root.
+
+import Foundation
+
+/// A self-contained notch app that can coexist with other modules in one host process
+/// and be swapped onto the shared surface at runtime.
+///
+/// A module owns its home view, compact slots, theme, lifecycle hooks (all expressed
+/// through the ``NookConfiguration`` it produces) and its product state and services
+/// (held as stored properties - the module instance *is* its own dependency container).
+///
+/// A module is built by its factory with an isolated ``NookModuleContext``; conventionally
+/// it captures the context and persists through `context.defaults` / `context.containerURL`.
+/// ``onActivate()`` / ``onDeactivate()`` mark module switches: a switch activates the
+/// incoming module, puts it on the surface, and then finishes the outgoing one -
+/// ``prepareForSwitchAway()``, then ``onDeactivate()``, then the unload its
+/// ``NookModuleDescriptor/backgroundPolicy`` asks for. The module the host launches with is
+/// constructed already in the foreground and gets no ``onActivate()``, so work it runs while
+/// in the foreground starts in its initializer as well (see ``onActivate()``).
+@MainActor
+public protocol NookModule: AnyObject {
+    /// The module's registration-time identity. Must equal the descriptor it was
+    /// registered with.
+    var descriptor: NookModuleDescriptor { get }
+
+    /// Builds the surface configuration - home/compact content, theme, chrome opt-outs,
+    /// lifecycle hooks. Called when the module becomes active, including for the launch
+    /// module right after it is constructed; the result is cached by the host until the
+    /// next activation or ``AppCoordinator/reloadActiveConfiguration()``.
+    func makeConfiguration() -> NookConfiguration
+
+    /// Called when a module switch makes this module the foreground module. The surface is
+    /// about to show this module's content.
+    ///
+    /// Not called for the module the host launches with: that module is constructed as the
+    /// foreground module, so there is no switch to report. Start launch-time work (a timer,
+    /// an observer) in the module's initializer too, and make this method safe to call
+    /// while that work is already running:
+    ///
+    /// ```swift
+    /// init() { startTimer() }
+    /// func onActivate() { startTimer() }     // no-op when already running
+    /// func onDeactivate() { stopTimer() }
+    /// ```
+    func onActivate()
+
+    /// Called when the user switches away, once ``prepareForSwitchAway()`` has returned (or
+    /// timed out). The module's content is no longer on the surface, and the incoming
+    /// module's ``onActivate()`` has already run; depending on
+    /// ``NookModuleDescriptor/backgroundPolicy`` the instance may be torn down after this
+    /// returns.
+    ///
+    /// Skipped when the user switches back to this module before its switch away finished:
+    /// the module then gets ``onActivate()`` again without an ``onDeactivate()`` in between.
+    func onDeactivate()
+
+    /// Called when switching away, BEFORE ``onDeactivate()`` and any
+    /// ``NookModuleDescriptor/backgroundPolicy``-driven teardown, for either policy. Returns
+    /// once the module has stopped all surface activity - drained any in-flight transient
+    /// presentation and released any surface claim it holds.
+    ///
+    /// It runs after the incoming module is already on the surface, so it never delays the
+    /// switch the user sees, and it is bounded by a 2-second timeout, after which the switch
+    /// away carries on. Until the switch away finishes, the surface denies this module new
+    /// claims.
+    ///
+    /// This is the async quiesce seam: ``onDeactivate()`` stays synchronous and is for
+    /// cheap, prompt cleanup; anything that must *join* in-flight work belongs here. A
+    /// module that owns a `NookActivityQueue` implements this by awaiting `quiesce()`.
+    func prepareForSwitchAway() async
+}
+
+extension NookModule {
+    public func onActivate() {}
+    public func onDeactivate() {}
+    public func prepareForSwitchAway() async {}
+}
+
+/// Adapts a plain ``NookConfiguration`` into a ``NookModule``.
+///
+/// This is what makes the single-module path a special case of the multi-module host:
+/// `NookApp.main(someConfiguration)` registers exactly one `ClosureModule`. It is also
+/// the simplest way to register a module that has no product state beyond its views.
+@MainActor
+public final class ClosureModule: NookModule {
+    public let descriptor: NookModuleDescriptor
+    private let build: @MainActor () -> NookConfiguration
+
+    public init(descriptor: NookModuleDescriptor, build: @escaping @MainActor () -> NookConfiguration) {
+        self.descriptor = descriptor
+        self.build = build
+    }
+
+    public func makeConfiguration() -> NookConfiguration {
+        build()
+    }
+}

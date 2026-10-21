@@ -1,0 +1,356 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 Glendon Chin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// A copy is included at /LICENSE in the repository root.
+
+import NookSurface
+import SwiftUI
+
+/// Topbar for the expanded notch.
+///
+/// Minimal by design: a tiny home cluster on the left (matched to right-side icon
+/// weight), and the keep-open / gear glyphs on the right. The only chrome-level
+/// toggle is between the home surface and settings - everything else belongs to
+/// whatever home view a downstream fork plugs in.
+struct NookTopBar: View {
+    @ObservedObject var appState: AppState
+    let chromeInteractionAccent: Color
+    @Binding var isHomeIconHovered: Bool
+    let toggleKeepOpen: () -> Void
+
+    /// Host-configurable leading-cluster label and icon (see `NookConfiguration`).
+    let leadingTitle: (AppState) -> String
+    let leadingIcon: String?
+
+    /// Host view for the leading icon, drawn in the given color; wins over `leadingIcon`.
+    /// See ``NookTopBarConfiguration/leadingIconView``.
+    var leadingIconView: (@Sendable @MainActor (Color) -> AnyView)? = nil
+
+    /// Whether the gear (and thus the Settings breadcrumb) is part of the bar. When
+    /// `false` the gear is omitted; `viewMode` never reaches `.settings` so the
+    /// breadcrumb is moot. See ``NookConfiguration/showsSettings``.
+    let showsSettings: Bool
+
+    /// Whether the lock and the gear render here. Off when the host shows them somewhere
+    /// else, such as a companion surface. See ``NookTopBarConfiguration/showsKeepOpenButton``
+    /// and ``NookTopBarConfiguration/showsSettingsButton``.
+    var showsKeepOpenButton = true
+    var showsSettingsButton = true
+
+    /// Host actions for the trailing cluster, rendered left of the keep-open lock and
+    /// gear. `nil` (the default) leaves the cluster as just the framework's lock/gear.
+    /// See ``NookTopBarConfiguration/trailingItems``.
+    let trailingItems: (@Sendable @MainActor () -> AnyView)?
+
+    /// How the row spans the expanded content column. See ``NookTopBarConfiguration/Width``.
+    let width: NookTopBarConfiguration.Width
+
+    /// When non-`nil`, the leading cluster becomes a compact module switcher popup
+    /// instead of the plain title - supplied by the multi-module router only when the
+    /// host opted into ``NookModuleSwitcherPlacement/leadingCluster``. Defaults to `nil`,
+    /// so single-module and menu-bar-switcher hosts render the plain title unchanged.
+    /// See ``NookModuleSwitcher``.
+    var moduleSwitcher: NookModuleSwitcher? = nil
+
+    @Environment(\.nookResolvedTheme) private var resolvedTheme
+
+    /// Curve-derived safe-area insets from the chrome. Leading/trailing clusters pad
+    /// by these values so host rows and the top bar share one horizontal gutter.
+    @Environment(\.nookContentInsets) private var contentInsets
+
+    /// Host-overridable chrome strings, layout metrics, in-panel motion, and typography
+    /// (see ``NookChromeLabels`` / ``NookChromeMetrics`` / ``NookChromeMotion`` /
+    /// ``NookChromeTypography``). Injected by ``NookExpandedView``; defaults reproduce
+    /// today's chrome.
+    @Environment(\.nookChromeLabels) private var labels
+    @Environment(\.nookChromeMetrics) private var metrics
+    @Environment(\.nookChromeMotion) private var motion
+    @Environment(\.nookChromeTypography) private var typography
+
+    /// The bar's glyphs. Injected by ``NookExpandedView`` from
+    /// ``NookTopBarConfiguration/symbols``.
+    @Environment(\.nookChromeSymbols) private var symbols
+
+    /// Host branding - used for the leading-cluster brand mark when no `leadingIcon` is
+    /// configured. Injected by the expanded router. See ``NookHostBranding``.
+    @Environment(\.nookHostBranding) private var branding
+
+    var body: some View {
+        Group {
+            switch width {
+                case .contentColumn:
+                    contentColumnBar
+                case .intrinsic:
+                    intrinsicBar
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: metrics.topBarHeight)
+        .animation(motion.breadcrumb, value: appState.moduleBreadcrumb)
+    }
+
+    /// Full-width bar: trailing cluster is overlay-pinned so it always shares the
+    /// content-column gutter with host rows (Settings toggles, home command bars).
+    private var contentColumnBar: some View {
+        Color.clear
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .leading) {
+                leadingBarContent
+            }
+            .overlay(alignment: .trailing) {
+                trailingCluster
+                    .padding(.trailing, contentInsets.trailing)
+            }
+            .frame(maxWidth: .infinity, minHeight: metrics.topBarHeight, maxHeight: metrics.topBarHeight)
+    }
+
+    private var intrinsicBar: some View {
+        HStack(spacing: metrics.topBarItemSpacing) {
+            leadingBarContent
+            Spacer(minLength: 0)
+            trailingCluster
+                .padding(.trailing, contentInsets.trailing)
+        }
+    }
+
+    private var leadingBarContent: some View {
+        HStack(spacing: metrics.topBarItemSpacing) {
+            homeLeadingCluster
+                .fixedSize(horizontal: true, vertical: false)
+                .padding(.leading, contentInsets.leading)
+
+            if appState.isSettingsView {
+                Image(systemName: symbols.breadcrumbSeparator)
+                    .font(typography.breadcrumbChevron)
+                    .foregroundStyle(resolvedTheme.quaternaryLabel)
+
+                Text(labels.settingsBreadcrumb)
+                    .font(typography.topBarLabel)
+                    .foregroundStyle(resolvedTheme.secondaryLabel)
+            } else if let breadcrumb = appState.moduleBreadcrumb, !breadcrumb.isEmpty {
+                Image(systemName: symbols.breadcrumbSeparator)
+                    .font(typography.breadcrumbChevron)
+                    .foregroundStyle(resolvedTheme.quaternaryLabel)
+
+                Text(breadcrumb)
+                    .font(typography.topBarLabel)
+                    .foregroundStyle(resolvedTheme.secondaryLabel)
+                    .lineLimit(1)
+                    .frame(width: metrics.breadcrumbMaxWidth, alignment: .leading)
+                    .mask(
+                        LinearGradient(
+                            stops: [
+                                .init(color: .black, location: 0),
+                                .init(color: .black, location: 0.5),
+                                .init(color: .clear, location: 1),
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .help(breadcrumb)
+                    .transition(.opacity.combined(with: .offset(x: -4)))
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var trailingCluster: some View {
+        HStack(spacing: metrics.trailingClusterSpacing) {
+            if let trailingItems {
+                trailingItems()
+            }
+
+            if showsKeepOpenButton {
+                HeaderIcon(
+                    systemName: symbols.keepOpen(appState.keepNookOpen),
+                    isActive: appState.keepNookOpen,
+                    activeColor: chromeInteractionAccent,
+                    help: labels.keepOpenHelp
+                ) {
+                    toggleKeepOpen()
+                }
+            }
+
+            if showsSettings && showsSettingsButton {
+                HeaderIcon(
+                    systemName: symbols.settings,
+                    isActive: appState.isSettingsView,
+                    activeColor: chromeInteractionAccent,
+                    help: labels.settingsHelp
+                ) {
+                    NookTopBarCommands.toggleSettings(appState, animation: motion.viewModeChange)
+                }
+            }
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    /// On home the configured title stays visible next to its icon; in settings -
+    /// or when a module has pushed a `moduleBreadcrumb` (a drilled-in product
+    /// sub-context) - the label collapses until the user hovers the glyph, which
+    /// doubles as the back control. Clicking it exits Settings or clears the
+    /// breadcrumb; the module observes that clear and pops its own sub-state.
+    ///
+    /// The collapsed glyph keeps the host identity - the configured `leadingIcon`, or
+    /// the brand mark when none is set - rather than swapping to a bare back chevron.
+    /// A `chevron.left` here would sit beside the breadcrumb's `chevron.right`
+    /// separator and misread as browser back/forward buttons; keeping the mark makes
+    /// the bar read as the breadcrumb it is: `[mark] > Settings`. A host that wants a
+    /// back glyph anyway sets ``NookChromeSymbols/back``.
+    private var homeLeadingCluster: some View {
+        let hasBreadcrumb = (appState.moduleBreadcrumb?.isEmpty == false)
+        let showPersistentHomeTitle = appState.isHomeView && !appState.isSettingsView && !hasBreadcrumb
+        let title = leadingTitle(appState)
+
+        return HStack(spacing: metrics.leadingClusterSpacing) {
+            if showPersistentHomeTitle, let moduleSwitcher {
+                // Multi-module host that opted into an in-surface switcher: the leading
+                // cluster IS the switcher (it replaces the plain title - no extra band,
+                // no duplicated identity).
+                ModuleSwitcherMenu(
+                    switcher: moduleSwitcher,
+                    fallbackIcon: leadingIcon,
+                    fallbackIconView: leadingIconView,
+                    fallbackTitle: title,
+                    theme: resolvedTheme,
+                    branding: branding
+                )
+            } else if showPersistentHomeTitle {
+                if let leadingIconView {
+                    leadingIconView(resolvedTheme.headerInactiveIcon)
+                } else if let leadingIcon {
+                    StaticHeaderIcon(systemName: leadingIcon)
+                } else {
+                    branding.markView(
+                        size: metrics.brandMarkSize,
+                        strokeWidth: metrics.brandMarkStrokeWidth,
+                        color: resolvedTheme.secondaryLabel.opacity(metrics.brandMarkOpacity)
+                    )
+                }
+                Text(title)
+                    .font(typography.topBarLabel)
+                    .foregroundStyle(resolvedTheme.secondaryLabel)
+                    .lineLimit(1)
+            } else {
+                HeaderGlyphButton(
+                    isActive: false,
+                    activeColor: chromeInteractionAccent,
+                    help: title,
+                    action: {
+                        NookTopBarCommands.goBack(appState, animation: motion.leadingClusterBack)
+                    }
+                ) { color in
+                    if let back = symbols.back {
+                        Image(systemName: back)
+                            .font(typography.headerIcon)
+                            .foregroundStyle(color)
+                    } else if let leadingIconView {
+                        leadingIconView(color)
+                    } else if let leadingIcon {
+                        Image(systemName: leadingIcon)
+                            .font(typography.headerIcon)
+                            .foregroundStyle(color)
+                    } else {
+                        branding.markView(
+                            size: metrics.brandMarkSize,
+                            strokeWidth: metrics.brandMarkStrokeWidth,
+                            color: color
+                        )
+                    }
+                }
+                .accessibilityLabel(title)
+                .onHover { isHomeIconHovered = $0 }
+
+                if isHomeIconHovered {
+                    Text(title)
+                        .font(typography.topBarLabel)
+                        .foregroundStyle(resolvedTheme.secondaryLabel)
+                        .lineLimit(1)
+                        .transition(
+                            .asymmetric(
+                                insertion: .opacity.combined(with: .offset(x: -6)),
+                                removal: .opacity.combined(with: .offset(x: -4))
+                            )
+                        )
+                }
+            }
+        }
+        .animation(motion.leadingClusterHover, value: isHomeIconHovered)
+    }
+}
+
+/// The opt-in in-surface module switcher: a flat popup folded into the top bar's leading
+/// cluster. Its label is the active module's icon + name (matching the plain-title chrome
+/// it replaces) plus a small chevron; the menu lists every module, checks the active one,
+/// and badges any that asked for attention. Shown only when a host opts into
+/// ``NookModuleSwitcherPlacement/leadingCluster``. See ``NookModuleSwitcher``.
+private struct ModuleSwitcherMenu: View {
+    let switcher: NookModuleSwitcher
+    let fallbackIcon: String?
+    let fallbackIconView: (@Sendable @MainActor (Color) -> AnyView)?
+    let fallbackTitle: String
+    let theme: NookResolvedTheme
+    let branding: NookHostBranding
+
+    @Environment(\.nookChromeTypography) private var typography
+    @Environment(\.nookChromeMetrics) private var metrics
+    @Environment(\.nookChromeLabels) private var labels
+    @Environment(\.nookChromeSymbols) private var symbols
+
+    var body: some View {
+        Menu {
+            ForEach(switcher.modules) { descriptor in
+                Button {
+                    switcher.switchTo(descriptor.id)
+                } label: {
+                    if descriptor.id == switcher.activeID {
+                        Label(descriptor.displayName, systemImage: symbols.moduleSwitcherActive)
+                    } else if switcher.attentionIDs.contains(descriptor.id) {
+                        Label(labels.topBar.moduleAttention(descriptor.displayName), systemImage: descriptor.icon)
+                    } else {
+                        Label(descriptor.displayName, systemImage: descriptor.icon)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: metrics.leadingClusterSpacing) {
+                icon
+                Text(activeTitle)
+                    .font(typography.topBarLabel)
+                    .foregroundStyle(theme.secondaryLabel)
+                    .lineLimit(1)
+                Image(systemName: symbols.moduleSwitcherIndicator)
+                    .font(typography.switcherChevron)
+                    .foregroundStyle(theme.tertiaryLabel)
+            }
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(labels.topBar.switchModuleHelp)
+    }
+
+    private var activeTitle: String {
+        switcher.activeDescriptor?.displayName ?? fallbackTitle
+    }
+
+    @ViewBuilder private var icon: some View {
+        if let symbol = switcher.activeDescriptor?.icon {
+            StaticHeaderIcon(systemName: symbol)
+        } else if let fallbackIconView {
+            fallbackIconView(theme.headerInactiveIcon)
+        } else if let fallbackIcon {
+            StaticHeaderIcon(systemName: fallbackIcon)
+        } else {
+            branding.markView(
+                size: metrics.brandMarkSize,
+                strokeWidth: metrics.brandMarkStrokeWidth,
+                color: theme.secondaryLabel.opacity(metrics.brandMarkOpacity)
+            )
+        }
+    }
+}

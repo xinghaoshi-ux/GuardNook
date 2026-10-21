@@ -1,0 +1,24 @@
+# Build output
+.build/
+.swiftpm/
+dist/
+*.app/
+node_modules/
+
+# Release artifacts (built, not source)
+*.dmg
+*.zip
+*.pkg
+
+# macOS
+.DS_Store
+__MACOSX/
+
+# Runtime data, never committed
+config.json
+state.json
+codex-intranet.json
+prepared-Script.js
+Backups/
+environment-backups*/
+*.log

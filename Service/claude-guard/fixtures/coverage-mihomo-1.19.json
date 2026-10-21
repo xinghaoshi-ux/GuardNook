@@ -1,0 +1,450 @@
+[
+  {
+    "index": 0,
+    "type": "DomainSuffix",
+    "payload": "claude.ai",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 1,
+    "type": "DomainSuffix",
+    "payload": "claude.com",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 2,
+    "type": "DomainSuffix",
+    "payload": "anthropic.com",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 3,
+    "type": "DomainSuffix",
+    "payload": "claudeusercontent.com",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 4,
+    "type": "Domain",
+    "payload": "accounts.google.com",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 5,
+    "type": "Domain",
+    "payload": "google.com",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 6,
+    "type": "Domain",
+    "payload": "www.google.com",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 7,
+    "type": "DomainSuffix",
+    "payload": "claudemcpcontent.com",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 8,
+    "type": "Domain",
+    "payload": "localhost",
+    "proxy": "DIRECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 9,
+    "type": "IPCIDR",
+    "payload": "127.0.0.0/8",
+    "proxy": "DIRECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 10,
+    "type": "IPCIDR",
+    "payload": "::1/128",
+    "proxy": "DIRECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 11,
+    "type": "AND",
+    "payload": "((Network,udp) && (OR,((DomainSuffix,claude.ai) || (DomainSuffix,claude.com) || (DomainSuffix,anthropic.com) || (DomainSuffix,claudeusercontent.com) || (DomainSuffix,claudemcpcontent.com))))",
+    "proxy": "REJECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 12,
+    "type": "AND",
+    "payload": "((ProcessName,Claude) && (Network,udp))",
+    "proxy": "REJECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 13,
+    "type": "AND",
+    "payload": "((ProcessName,Claude Helper) && (Network,udp))",
+    "proxy": "REJECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 14,
+    "type": "AND",
+    "payload": "((ProcessName,Claude Helper (Renderer)) && (Network,udp))",
+    "proxy": "REJECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 15,
+    "type": "AND",
+    "payload": "((ProcessName,Claude Helper (GPU)) && (Network,udp))",
+    "proxy": "REJECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 16,
+    "type": "AND",
+    "payload": "((ProcessName,Claude Helper (Plugin)) && (Network,udp))",
+    "proxy": "REJECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 17,
+    "type": "AND",
+    "payload": "((ProcessName,claude) && (Network,udp))",
+    "proxy": "REJECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 18,
+    "type": "AND",
+    "payload": "((ProcessName,claude-code) && (Network,udp))",
+    "proxy": "REJECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 19,
+    "type": "AND",
+    "payload": "((ProcessPathRegex,.*(/\\.local/share/claude/versions/|/Claude\\.app/Contents/).*) && (Network,udp))",
+    "proxy": "REJECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 20,
+    "type": "ProcessName",
+    "payload": "Claude",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 21,
+    "type": "ProcessName",
+    "payload": "Claude Helper",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 22,
+    "type": "ProcessName",
+    "payload": "Claude Helper (Renderer)",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 23,
+    "type": "ProcessName",
+    "payload": "Claude Helper (GPU)",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 24,
+    "type": "ProcessName",
+    "payload": "Claude Helper (Plugin)",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 25,
+    "type": "ProcessName",
+    "payload": "claude",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 26,
+    "type": "ProcessName",
+    "payload": "claude-code",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 27,
+    "type": "ProcessPathRegex",
+    "payload": ".*(/\\.local/share/claude/versions/|/Claude\\.app/Contents/).*",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 28,
+    "type": "IPCIDR",
+    "payload": "160.79.104.0/23",
+    "proxy": "Claude-203.0.113.10",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 29,
+    "type": "IPCIDR",
+    "payload": "2607:6bc0::/48",
+    "proxy": "REJECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 30,
+    "type": "DomainSuffix",
+    "payload": "private.company",
+    "proxy": "DIRECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  },
+  {
+    "index": 31,
+    "type": "Match",
+    "payload": "",
+    "proxy": "DIRECT",
+    "size": -1,
+    "extra": {
+      "disabled": false,
+      "hitCount": 0,
+      "hitAt": "1970-01-01T09:00:00+09:00",
+      "missCount": 0,
+      "missAt": "1970-01-01T09:00:00+09:00"
+    }
+  }
+]

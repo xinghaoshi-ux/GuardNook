@@ -1,0 +1,168 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 Glendon Chin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// A copy is included at /LICENSE in the repository root.
+
+import Foundation
+
+/// The host-level registration seam: which modules a multi-module notch app offers,
+/// and which one opens at launch.
+///
+/// Where ``NookConfiguration`` registers a *single* notch app's content,
+/// `NookHostConfiguration` registers the *set* of interchangeable modules a host
+/// process owns. Pass one to `NookApp.main(_:)`:
+///
+/// ```swift
+/// var host = NookHostConfiguration()
+/// host.register(NuggieModule.descriptor) { context in NuggieModule(context: context) }
+/// host.register(ClipboardModule.descriptor) { context in ClipboardModule(context: context) }
+/// host.defaultModule = NuggieModule.descriptor.id
+/// NookApp.main(host)
+/// ```
+/// `Sendable`: the registry entries hold only `Sendable` data (descriptors and
+/// `@Sendable` factory closures). A host configuration is assembled at the nonisolated
+/// top level of a `main.swift` and then handed to `NookApp.main`, which runs setup on
+/// the main actor - a real isolation crossing, so the conformance must be genuine.
+public struct NookHostConfiguration: Sendable {
+    private var entries: [NookModuleRegistry.Registration] = []
+    private var explicitDefault: String?
+
+    /// Optional global shortcut that cycles to the next registered module. `nil` - the
+    /// default - means cycling is reachable only through the switcher.
+    public var moduleCycleHotkey: NookHotkey?
+
+    /// Host-product identity surfaced through the framework chrome - the About card,
+    /// the show/hide hotkey label, the menu-bar fallback. Defaults to ``NookHostBranding/default``
+    /// (`"Nook"` / nil) so an unconfigured host renders the demo strings.
+    public var branding: NookHostBranding = .default
+
+    /// Launch *seed* values for the process-global preferences (appearance, global
+    /// hotkey, display target). Applied at ``AppState`` construction - before first
+    /// paint and before hotkey registration - so a host ships its own out-of-box look
+    /// and shortcut. Defaults to ``NookPreferenceDefaults/default`` (today's framework
+    /// behavior). See ``NookPreferenceDefaults`` for the seed-vs-persisted semantics.
+    public var preferenceDefaults: NookPreferenceDefaults = .default
+
+    /// Process-global chrome behavior - hover side-effects, the cold-launch shimmer, and
+    /// the appearance->backdrop mapping. Defaults to ``NookChromeBehavior/default``
+    /// (today's framework behavior). See ``NookChromeBehavior``.
+    public var chromeBehavior: NookChromeBehavior = .default
+
+    /// Whether the framework installs its menu-bar status item ("Show ..." / Settings /
+    /// Quit). Defaults to `true`. Set to `false` for a host with its own menu-bar
+    /// presence or none.
+    public var showsMenuBarExtra: Bool = true
+
+    /// The chrome theme every module draws with unless its own configuration sets
+    /// ``NookConfiguration/chromeTheme``. `nil` (the default) is ``NookTheme/standard``, the
+    /// framework's look. A module's theme replaces this one as a whole.
+    public var chromeTheme: NookTheme?
+
+    /// A host theme that changes while the nook runs, such as a watched theme file. When set,
+    /// it stands in for ``chromeTheme``. See ``NookThemeSource``.
+    public var chromeThemeSource: NookThemeSource?
+
+    /// Where the module switcher appears. Defaults to ``NookModuleSwitcherPlacement/menuBar``
+    /// so the framework never plants switcher chrome in the host's expanded surface: a
+    /// multi-module host gets a "Modules" menu-bar section and the cycle / per-module
+    /// hotkeys, and the surface stays entirely the host's. Opt into
+    /// ``NookModuleSwitcherPlacement/leadingCluster`` for a compact in-surface switcher,
+    /// or ``NookModuleSwitcherPlacement/none`` for hotkeys only. Has no effect on a
+    /// single-module host.
+    public var moduleSwitcherPlacement: NookModuleSwitcherPlacement = .menuBar
+
+    /// How the compact pill shares itself among live activities: how many show in capsules
+    /// beside it, and on which side. ``NookActivityPolicy/standard`` (one capsule, trailing) by
+    /// default. See ``NookLiveActivity``.
+    public var activityPolicy: NookActivityPolicy = .standard
+
+    /// Builds an empty host. Register at least one module via ``register(_:factory:)``
+    /// or ``register(_:configuration:)`` before passing to `NookApp.main(_:)`.
+    public init() {}
+
+    /// Registers a module by descriptor and factory. The factory receives the module's
+    /// isolated ``NookModuleContext`` and is run lazily - only when the module is first
+    /// activated, not at registration time.
+    ///
+    /// Traps on a duplicate `descriptor.id`. A module id keys persistence (the
+    /// `UserDefaults` suite `"opennook.module.<id>"` and the per-module container
+    /// folder), the switcher entry, the arbiter's per-module claim invalidation, and
+    /// the direct-jump hotkey registration. Two registrations under the same id would
+    /// collide on every one of those silently - the second factory becomes dead code,
+    /// the persistence suites alias, and the switcher renders two indistinguishable
+    /// entries - so we fail fast at the setup site (a `main.swift` programming bug)
+    /// rather than ship the corruption into production.
+    public mutating func register(
+        _ descriptor: NookModuleDescriptor,
+        factory: @escaping @Sendable @MainActor (NookModuleContext) -> NookModule
+    ) {
+        precondition(
+            !entries.contains(where: { $0.descriptor.id == descriptor.id }),
+            "NookHostConfiguration: duplicate module id '\(descriptor.id)'. "
+                + "Module ids must be unique within a host - they key persistence, the "
+                + "switcher entry, the per-module hotkey, and the arbiter's claim invalidation."
+        )
+        entries.append(NookModuleRegistry.Registration(descriptor: descriptor, factory: factory))
+    }
+
+    /// Registers a module that is just a ``NookConfiguration`` with no extra product
+    /// state - the configuration is wrapped in a ``ClosureModule``.
+    ///
+    /// Inherits the duplicate-id `precondition` from the factory overload it delegates
+    /// to.
+    public mutating func register(
+        _ descriptor: NookModuleDescriptor,
+        configuration: @escaping @Sendable @MainActor () -> NookConfiguration
+    ) {
+        register(descriptor) { _ in
+            ClosureModule(descriptor: descriptor, build: configuration)
+        }
+    }
+
+    /// The id of the module to show at launch. When `nil`, the first registered module
+    /// is used.
+    public var defaultModule: String? {
+        get { explicitDefault }
+        set { explicitDefault = newValue }
+    }
+
+    /// `true` until at least one module is registered.
+    public var isEmpty: Bool { entries.isEmpty }
+
+    /// Builds the live registry. The default module is the explicit choice when set and
+    /// still registered, otherwise the first registered module.
+    ///
+    /// Traps on an empty configuration: `NookHostConfiguration` is the multi-module
+    /// entry point and is meaningless with zero registrations. An empty registry's
+    /// `activeModuleID` resolves to `""`, which the arbiter treats as "background
+    /// module" for every claim - denying everything that isn't `.urgent`. That is a
+    /// silent bug; failing fast at registration time surfaces it. Single-module hosts
+    /// should use ``NookConfiguration`` directly, not `NookHostConfiguration`.
+    @MainActor
+    public func makeRegistry() -> NookModuleRegistry {
+        precondition(
+            !entries.isEmpty,
+            "NookHostConfiguration: register at least one module before makeRegistry(). "
+                + "For single-module apps, use NookConfiguration with NookApp.main(_:) instead."
+        )
+        let registeredIDs = Set(entries.map { $0.descriptor.id })
+        let defaultID =
+            explicitDefault.flatMap { registeredIDs.contains($0) ? $0 : nil }
+            ?? entries.first!.descriptor.id
+        return NookModuleRegistry(
+            registrations: entries,
+            defaultModuleID: defaultID,
+            cycleHotkey: moduleCycleHotkey,
+            branding: branding,
+            chromeBehavior: chromeBehavior,
+            showsMenuBarExtra: showsMenuBarExtra,
+            chromeTheme: chromeTheme,
+            chromeThemeSource: chromeThemeSource,
+            switcherPlacement: moduleSwitcherPlacement,
+            presentationPinning: NookPresentationPinning(),
+            activityPolicy: activityPolicy
+        )
+    }
+}
