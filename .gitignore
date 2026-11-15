@@ -22,3 +22,7 @@ prepared-Script.js
 Backups/
 environment-backups*/
 *.log
+
+# Packaging staging
+staged/
+test-results/

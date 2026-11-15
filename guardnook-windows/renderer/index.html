@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>GuardNook</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <button id="pill" aria-label="展开 GuardNook"><span class="shield">◈</span><span id="pill-clock">GuardNook</span><span class="status-dot" id="pill-dot"></span></button>
+  <div id="panel" hidden>
+    <header>
+      <div class="brand"><span class="shield">◈</span><span>GuardNook <small>WINDOWS</small></span></div>
+      <div class="header-right"><span id="beijing" hidden></span><span id="clock"></span><button id="pin" class="icon-button" title="固定展开" aria-label="固定展开">◇</button><button id="collapse" class="icon-button" title="收起面板" aria-label="收起面板">−</button></div>
+    </header>
+    <nav aria-label="主导航">
+      <button data-tab="home" class="active">工作台</button><button data-tab="apps">启动器</button><button data-tab="guard">Claude 守护</button><button data-tab="settings">设置</button>
+      <span id="nav-status">未配置保护</span>
+    </nav>
+    <main>
+      <section id="home" class="tab">
+        <div class="section-heading"><div><p class="eyebrow">YOUR DAILY SPACE</p><h1 id="greeting">把注意力，留给正在做的事。</h1></div><span id="today-label" class="muted"></span></div>
+        <div class="workspace">
+          <article class="card todos"><div class="card-heading"><h2>待办事项</h2><input id="todo-date" type="date" aria-label="选择待办日期"></div><div id="days" class="days"></div><div id="todo-list" class="todo-list"></div><form id="todo-form" class="add-row"><input id="todo-draft" placeholder="添加一件要做的事…" maxlength="2000" aria-label="新待办"><button class="icon-button" aria-label="添加待办">＋</button></form></article>
+          <article class="card notes"><div class="card-heading"><h2>随手记</h2><span id="note-state" class="subtle">自动保存到本机</span></div><textarea id="note" maxlength="100000" placeholder="灵感、片段、下一步。&#10;在这里随手记下来。" aria-label="随手记"></textarea><div class="note-footer"><span id="note-count">0 字</span><span>只有这台电脑</span></div></article>
+        </div>
+        <div class="section-heading compact-heading"><h2>这台电脑的网络</h2><button id="probe-refresh" class="text-button">重新检测 ↻</button></div>
+        <div id="network-cards" class="network-grid"></div>
+        <p class="footnote">各服务独立实测当前系统网络；匿名 HTTPS 可达不代表账号登录或 API 调用成功。</p>
+      </section>
+      <section id="apps" class="tab" hidden>
+        <div class="section-heading"><div><p class="eyebrow">ONE PLACE TO OPEN</p><h1>你的应用，随时在手边。</h1></div><div class="toolbar"><button id="add-app">添加应用</button><button id="add-folder">新建文件夹</button><button id="apps-refresh" class="icon-button" aria-label="刷新应用">↻</button></div></div>
+        <div class="app-controls"><input id="app-search" type="search" placeholder="搜索应用…" aria-label="搜索应用"><button id="folder-back" hidden>← 全部应用</button><select id="app-sort" aria-label="应用排序"><option value="name">按名称排序</option><option value="custom">自定顺序</option></select></div>
+        <div id="folder-heading" class="folder-heading" hidden><h2></h2><button id="rename-folder" class="text-button">重命名</button><button id="delete-folder" class="text-button danger-text">解散文件夹</button></div>
+        <p id="app-message" class="muted"></p><div id="app-grid" class="app-grid"></div>
+        <p class="footnote">拖动应用到文件夹即可归类；拖到另一个应用上可建立文件夹。点“⋯”可用键盘管理归类。Ctrl + Alt + Space 展开或收起面板。</p>
+      </section>
+      <section id="guard" class="tab" hidden>
+        <div class="section-heading"><div><p class="eyebrow">A SINGLE, VERIFIED EXIT</p><h1>Claude 通道守护</h1></div><button id="configure">配置节点</button></div>
+        <article id="guard-summary" class="card guard-summary"><span class="guard-emblem">◈</span><div><h2 id="guard-title">尚未配置保护</h2><p id="guard-reason">先选择 Clash 中的固定节点和允许的出口 IPv4。</p></div><span id="guard-tag" class="tag">未接入</span></article>
+        <div class="guard-metrics"><div><span>允许的出口</span><strong id="expected-ip">—</strong></div><div><span>最近实测出口</span><strong id="observed-ip">未知</strong></div><div><span>连续确认</span><strong id="samples">—</strong></div><div><span>网关连接</span><strong id="connections">0</strong></div></div>
+        <div class="toolbar guard-actions"><button id="guard-enable" class="primary">启用保护</button><button id="guard-block" class="danger">立即阻断</button><button id="guard-inspect">重新验证</button><button id="guard-audit">检查覆盖</button><button id="guard-route">实测客户端路径</button></div>
+        <p class="footnote">请先在 Clash 导入生成的扩展脚本并重载配置。默认要求开启 TUN；只有固定节点、规则和出口连续验证通过后才放行。绕过 Clash 的流量不在网关保护范围内。</p>
+        <div id="diagnostics" class="diagnostic" hidden></div>
+        <div class="section-heading compact-heading"><h2>最近的连接</h2><span id="log-state" class="muted">等待内核记录</span></div><div id="connection-list" class="connection-list"></div>
+      </section>
+      <section id="settings" class="tab" hidden>
+        <div class="section-heading"><div><p class="eyebrow">MAKE IT YOURS</p><h1>让工作台适合你的习惯。</h1></div><span id="version" class="muted"></span></div>
+        <article class="card setting-card">
+          <label class="setting"><span><strong>开机自动启动</strong><small>登录 Windows 后启动 GuardNook</small></span><input id="login" type="checkbox" role="switch"></label>
+          <label class="setting"><span><strong>固定展开</strong><small>鼠标离开时保留面板</small></span><input id="pinned" type="checkbox" role="switch"></label>
+          <label class="setting"><span><strong>北京时间</strong><small>在面板顶部额外显示北京时间</small></span><input id="beijing-clock" type="checkbox" role="switch"></label>
+          <label class="setting"><span><strong>外观</strong><small>选择喜欢的明暗模式</small></span><select id="theme"><option value="dark">深色</option><option value="light">浅色</option><option value="system">跟随系统</option></select></label>
+          <label class="setting"><span><strong>所在屏幕</strong><small>面板位于所选屏幕的工作区顶部</small></span><select id="display"></select></label>
+        </article>
+        <div class="toolbar settings-actions"><button id="export-board">导出待办与随手记</button><button id="open-data">打开本机数据目录</button><button id="quit" class="danger-text">退出 GuardNook</button></div>
+        <p class="footnote">快捷键 Ctrl + Alt + Space。关闭或退出 GuardNook 会关闭它管理的网关；已接入 Clash 的受保护流量随之阻断。恢复原网络需在 Clash 还原接入前的原始脚本。节点配置和生成脚本含本机凭据，请勿分享。</p>
+      </section>
+      <section id="setup" class="tab" hidden>
+        <div class="section-heading"><div><p class="eyebrow">CONNECT YOUR OWN NODE</p><h1>配置固定出口</h1></div><button id="setup-back" class="text-button">← 返回守护</button></div>
+        <form id="setup-form">
+          <div class="form-grid"><label>Clash 控制接口<input id="controller-url" type="url" value="http://127.0.0.1:9090" required><small>本机 external-controller 地址，需在 Clash 设置中开启。</small></label><label>接口密钥<input id="controller-secret" type="password" autocomplete="off" maxlength="1024"><small id="secret-hint">未设置密钥可留空。</small></label></div>
+          <div class="toolbar"><button id="load-nodes" type="button">读取 Clash 节点</button><span id="node-count" class="muted">先启动 Clash Verge / Mihomo</span></div>
+          <div class="form-grid"><label>Claude 使用的固定节点<select id="selected-proxy" required><option value="">请先读取节点</option></select><small id="chain-hint">请选择具体节点，自动切换组不会列出。</small></label><label>唯一允许的出口 IPv4<input id="expected-input" placeholder="填写你自己的节点实际出口" required autocomplete="off"><small>节点名称中的国家不代表实际出口，动态 IP 可能无法持续通过。</small></label></div>
+          <details><summary>端口与原始扩展脚本</summary><div class="port-grid"><label>面板端口<input id="server-port" type="number" value="18791" min="1024" max="65535" required></label><label>客户端端口<input id="client-port" type="number" value="18901" min="1024" max="65535" required></label><label>探测端口<input id="probe-port" type="number" value="18903" min="1024" max="65535" required></label><label>网关端口<input id="gateway-port" type="number" value="18904" min="1024" max="65535" required></label></div><div class="toolbar"><button id="pick-script" type="button">选择原始 JS 脚本</button><span id="script-name" class="muted">没有原脚本时使用透传脚本</span></div><p class="footnote">请选择接入 GuardNook 之前的原始脚本，已有分流会保留。不要选择已生成的 GuardNook 脚本。</p></details>
+          <label class="check-row"><input id="require-tun" type="checkbox" checked>要求 Clash 开启 TUN 才放行</label><label class="check-row"><input id="start-protected" type="checkbox">应用启动时开始验证并启用保护</label>
+          <div class="toolbar"><button class="primary" id="save-setup">保存配置并生成脚本</button><button id="reveal-script" type="button">显示生成的脚本</button></div>
+          <p id="setup-result" class="footnote">保存后，在 Clash 全局扩展脚本中导入生成的 JS，重载配置并保持“规则”模式，再启用保护。应用不会自动改写或重载 Clash。</p>
+        </form>
+      </section>
+    </main>
+    <footer><span><span class="status-dot"></span> 本机工作台</span><span>Ctrl + Alt + Space</span></footer>
+  </div>
+  <div id="toast" role="status" hidden></div>
+  <dialog id="text-dialog"><form method="dialog"><h2 id="dialog-title"></h2><label id="dialog-label" for="dialog-input">名称</label><input id="dialog-input" maxlength="40" required><div class="toolbar"><button value="cancel" formnovalidate>取消</button><button value="ok" class="primary">确定</button></div></form></dialog>
+  <dialog id="move-dialog"><form method="dialog"><h2 id="move-title">应用归类</h2><label for="move-folder">移动到</label><select id="move-folder"></select><div class="toolbar"><button value="cancel">取消</button><button value="ok" class="primary">移动</button></div></form></dialog>
+</body>
+</html>

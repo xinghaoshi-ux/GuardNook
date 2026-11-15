@@ -1,0 +1,7 @@
+.build/
+.swiftpm/
+.DS_Store
+*.log
+config.json
+state.json
+prepared-Script.js

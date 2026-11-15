@@ -1,0 +1,51 @@
+{
+  "name": "@guardnook/windows",
+  "productName": "GuardNook",
+  "version": "0.2.8-win.1",
+  "private": true,
+  "description": "GuardNook — floating workspace and Claude exit guard for Windows",
+  "author": "GuardNook",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/main.mjs",
+  "scripts": {
+    "dev": "electron .",
+    "stage": "node scripts/stage.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "package:win": "npm run stage && electron-builder --win nsis zip --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "43.4.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "local.guardnook.windows",
+    "productName": "GuardNook",
+    "executableName": "GuardNook",
+    "asar": true,
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["src/**", "renderer/**", "package.json"],
+    "extraResources": [
+      { "from": "staged/Service", "to": "Service" },
+      { "from": "staged/Licenses", "to": "Licenses" },
+      { "from": "README.md", "to": "使用说明.md" },
+      { "from": "../guardnook/Assets/AppIcon.png", "to": "AppIcon.png" }
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": ["nsis", "zip"],
+      "artifactName": "GuardNook-${version}-windows-${arch}.${ext}",
+      "signExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GuardNook",
+      "artifactName": "GuardNook-${version}-windows-${arch}-setup.${ext}"
+    },
+    "publish": null
+  }
+}
